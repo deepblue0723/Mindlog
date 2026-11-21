@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mindlog">
+<meta name="theme-color" content="#FFFBF5">
+<title>Mindlog</title>
+<style>
+:root{
+  --bg:#FFFBF5;
+  --card:#FFFFFF;
+  --ink:#3A4560;
+  --muted:#8A8FA0;
+  --line:#E5DCC8;
+  --accent:#3A4560;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  -webkit-text-size-adjust:100%}
+body{min-height:100vh}
+button{font-family:inherit;color:inherit}
+#app{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left))}
+#app.wide{max-width:960px}
+
+/* 진료 화면 (전부 중앙정렬) */
+.paper{text-align:center}
+.ctitle{font-size:24px;font-weight:700;margin:4px 0 14px}
+.cdates{max-width:420px;margin:0 auto 14px}
+.cdates label{text-align:center}
+.cdates input{text-align:center}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px}
+.stat b{display:block;font-size:20px;margin-bottom:2px}
+.stat span{font-size:12px;color:var(--muted)}
+.cgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+.cbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:0}
+.cbox .gt{text-align:center;margin-bottom:6px}
+.cbox .gt small{font-size:12px;font-weight:400;color:var(--muted);margin-left:4px}
+.cntgrid{display:grid;grid-template-columns:1fr;gap:0 28px;text-align:left}
+.ev{padding:10px 0;border-bottom:1px solid var(--line);line-height:1.5;white-space:pre-wrap}
+.ev:last-child{border-bottom:0}
+.cbox .ev b{display:inline;font-size:15px;color:var(--ink);font-weight:700;margin-right:8px}
+.cbox + .cbox{margin-top:12px}
+@media (min-width:640px){
+  .cgrid{grid-template-columns:1fr 1fr}
+  .cntgrid{grid-template-columns:1fr 1fr}
+  .stats{grid-template-columns:repeat(4,1fr);max-width:700px;margin-left:auto;margin-right:auto}
+}
+.view{display:none}
+.view.active{display:block}
+
+/* 상단 */
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;min-height:44px}
+.dategroup{display:flex;align-items:center;gap:6px;min-width:0}
+.ver{font-size:11px;color:var(--muted);white-space:nowrap;border:1px solid var(--line);border-radius:10px;padding:2px 7px;background:#fff}
+.datebtn{position:relative;display:inline-block;font-size:18px;font-weight:700;padding:8px 0;cursor:pointer}
+.datebtn input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;background:transparent}
+.datesub{font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:12px;min-height:14px}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:0;background:transparent;font-size:26px;line-height:1;color:var(--ink);cursor:pointer}
+.subtitle{font-size:20px;font-weight:700}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+
+/* 슬라이더 */
+.moodcard{padding:18px 16px 12px}
+.moodval{text-align:center;font-size:44px;font-weight:700;line-height:1;margin-bottom:6px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:48px;background:transparent;margin:0;outline:none;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#D8CFBD}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #CFC5B0;box-shadow:0 2px 8px rgba(58,69,96,.3);margin-top:-15px}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#D8CFBD}
+#moodSlider::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,#AEBBE3 0%,#D3D9EF 28%,#EEEDF1 50%,#EFD3CE 72%,#DDA39B 100%)}
+#moodSlider::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(to right,#AEBBE3 0%,#D3D9EF 28%,#EEEDF1 50%,#EFD3CE 72%,#DDA39B 100%)}
+#moodSlider::-webkit-slider-thumb{margin-top:-14px;border:2px solid #3A4560}
+.sleepcard{padding:14px 16px}
+.sleepcard .lab{font-size:15px;font-weight:600;margin-bottom:10px;display:block}
+.sleeprow{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap}
+.sleeprow input[type=time]{flex:1 1 0;min-width:0;width:0;padding:9px 6px;text-align:center}
+.sleeprow span{font-size:14px;white-space:nowrap}
+.sleeptotal{text-align:center;font-size:13px;color:var(--muted);margin-top:8px;min-height:16px}
+input[type=range]::-moz-range-thumb{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid #CFC5B0;box-shadow:0 2px 8px rgba(58,69,96,.3)}
+.ticks{display:flex;justify-content:space-between;padding:0 12px;font-size:12px;color:var(--muted)}
+.ticks span{width:20px;text-align:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.sub{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px 4px}
+.sub .lab{font-size:13px;font-weight:600;line-height:1.35;min-height:35px}
+.sub .val{font-size:22px;font-weight:700;text-align:right;margin-top:2px}
+.sub input[type=range]{height:44px}
+.sub input[type=range]::-webkit-slider-thumb{width:30px;height:30px;margin-top:-12px}
+
+/* 입력 */
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.row .lab{font-size:15px;font-weight:600}
+.numwrap{display:flex;align-items:center;gap:8px}
+input[type=number],input[type=time],textarea,input[type=date].plain{font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+input[type=number]{width:90px;text-align:right}
+input[type=time]{min-width:120px}
+.checks{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+.chk{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 2px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;white-space:nowrap;min-width:0}
+.chk input{width:22px;height:22px;accent-color:var(--accent);margin:0}
+.med{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px}
+.med .lab{font-size:15px;font-weight:600}
+.med .ctl{display:flex;align-items:center;gap:6px}
+.xbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:16px;cursor:pointer}
+.ghost{width:100%;padding:15px;border-radius:14px;border:1.5px dashed var(--ink);background:transparent;color:var(--ink);font-size:16px;font-weight:600;margin:6px 0 12px;cursor:pointer}
+.primary{width:100%;padding:17px;border-radius:14px;border:0;background:var(--accent);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+.primary:active{opacity:.85}
+
+/* 메뉴 */
+#menu{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s linear .25s}
+#menu.open{visibility:visible;transition-delay:0s}
+#menu .scrim{position:absolute;inset:0;background:rgba(30,35,50,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .25s}
+#menu.open .scrim{opacity:1}
+#menu .panel{position:absolute;top:0;right:0;bottom:0;width:66%;max-width:340px;background:var(--bg);box-shadow:-6px 0 24px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .25s;padding:calc(env(safe-area-inset-top) + 14px) 16px 24px}
+#menu.open .panel{transform:translateX(0)}
+.panel .close{display:block;margin-left:auto;font-size:30px;width:44px;height:44px;border:0;background:transparent;cursor:pointer;color:var(--ink)}
+.menuitem{display:block;width:100%;text-align:left;padding:18px 8px;border:0;border-bottom:1px solid var(--line);background:transparent;font-size:18px;font-weight:600;cursor:pointer}
+
+/* 서브 화면 */
+.subhead{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.subhead .iconbtn{font-size:30px}
+.monthbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.monthbar .t{font-size:18px;font-weight:700}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{text-align:center;font-size:12px;color:var(--muted);padding:4px 0}
+.cal .cell{position:relative;aspect-ratio:1/1;border-radius:10px;border:1px solid var(--line);background:#fff;color:#111;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.cal .cell .dot{position:absolute;top:5px;left:50%;margin-left:-2.5px;width:5px;height:5px;border-radius:50%;background:#000}
+.cal .cell.empty{border:0;background:transparent;cursor:default}
+.cal .cell.today{outline:2px solid var(--accent);outline-offset:-2px}
+.legend{display:flex;align-items:center;gap:2px;margin-top:14px;justify-content:center}
+.legend span{width:28px;height:16px;border:1px solid var(--line)}
+.dates{display:flex;gap:10px;margin-bottom:14px}
+.dates label{flex:1;font-size:12px;color:var(--muted)}
+.dates input{width:100%;margin-top:4px;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.gt{font-size:15px;font-weight:700;margin-bottom:6px}
+.medcount{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.medcount:last-child{border-bottom:0}
+svg text{font-family:inherit}
+.msg{color:var(--muted);font-size:14px;text-align:center;padding:24px 8px;line-height:1.6}
+
+/* 월간메모 */
+.memopaper{padding:6px 16px;min-height:240px}
+.memorow{display:flex;align-items:flex-start;gap:4px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.memorow:last-child{border-bottom:0}
+.memorow .par{padding-top:6px;color:var(--muted);font-size:16px}
+.memod{width:52px;border:0;background:transparent;font-family:inherit;font-size:16px;font-weight:700;color:var(--ink);padding:5px 0;text-align:center;outline:none}
+.memot{flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:16px;line-height:1.55;color:var(--ink);padding:5px 4px;resize:none;outline:none;overflow:hidden;margin-left:4px}
+.memorow .xbtn{flex:0 0 auto;margin-top:2px}
+
+/* 모달 */
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center;background:rgba(30,35,50,.4)}
+.modal.open{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--bg);border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);max-height:85vh;overflow:auto}
+.sheet h3{margin:0 0 12px;font-size:18px}
+.sheet textarea{width:100%;min-height:160px;resize:vertical;line-height:1.5}
+.btnrow{display:flex;gap:10px;margin-top:12px}
+.btnrow button{flex:1}
+.secondary{padding:15px;border-radius:14px;border:1px solid var(--ink);background:transparent;color:var(--ink);font-size:16px;font-weight:600;cursor:pointer}
+.drow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.drow b{font-weight:600}
+.drow.ev{display:block;white-space:pre-wrap;line-height:1.5}
+
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 30px);transform:translateX(-50%);background:rgba(58,69,96,.95);color:#fff;padding:12px 20px;border-radius:24px;font-size:15px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.show{opacity:1}
+#errbar{display:none;background:#fde2e2;color:#7a1f1f;font-size:13px;padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="app" class="">
+  <div id="errbar"></div>
+
+  <!-- 홈 -->
+  <section id="view-home" class="view active">
+    <div class="top">
+      <div class="dategroup">
+        <label class="datebtn"><span id="dateText"></span><input type="date" id="dateInput"></label>
+        <span class="ver" id="verText"></span>
+      </div>
+      <button class="iconbtn" id="menuBtn" type="button" aria-label="메뉴">☰</button>
+    </div>
+    <div class="datesub" id="dateSub"></div>
+
+    <div class="card moodcard">
+      <div class="moodval" id="moodVal">0</div>
+      <input type="range" id="moodSlider" min="-4" max="4" step="1" value="0" aria-label="기분">
+      <div class="ticks" id="moodTicks"></div>
+    </div>
+
+    <div class="grid" id="subGrid"></div>
+
+    <div class="card sleepcard">
+      <span class="lab">수면시간</span>
+      <div class="sleeprow">
+        <input type="time" id="sleepFrom" aria-label="잠든 시각"><span>부터</span>
+        <input type="time" id="sleepTo" aria-label="일어난 시각"><span>까지</span>
+      </div>
+      <div class="sleeptotal" id="sleepTotal"></div>
+    </div>
+
+    <div class="checks" id="checks"></div>
+    <div id="meds"></div>
+
+    <button class="ghost" id="eventBtn" type="button">＋ 생활사건</button>
+    <button class="primary" id="saveBtn" type="button">저장하기</button>
+  </section>
+
+  <!-- 달력 -->
+  <section id="view-cal" class="view">
+    <div class="subhead">
+      <button class="iconbtn" type="button" data-back="1" aria-label="뒤로">‹</button>
+      <span class="subtitle">달력보기</span>
+    </div>
+    <div class="monthbar">
+      <button class="iconbtn" id="calPrev" type="button">‹</button>
+      <span class="t" id="calTitle"></span>
+      <button class="iconbtn" id="calNext" type="button">›</button>
+    </div>
+    <div class="cal" id="calGrid"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <!-- 그래프 -->
+  <section id="view-graph" class="view">
+    <div class="subhead">
+      <button class="iconbtn" type="button" data-back="1" aria-label="뒤로">‹</button>
+      <span class="subtitle">그래프로보기</span>
+    </div>
+    <div class="dates">
+      <label>시작일<input type="date" id="gStart"></label>
+      <label>종료일<input type="date" id="gEnd"></label>
+    </div>
+    <div class="card"><div class="gt">기분</div><div id="gMood"></div></div>
+    <div class="card"><div class="gt">불안</div><div id="gAnx"></div></div>
+    <div class="card"><div class="gt">수면</div><div id="gSleep"></div></div>
+    <div class="card" id="gMeds"></div>
+  </section>
+
+  <!-- 월간메모 -->
+  <section id="view-memo" class="view">
+    <div class="subhead">
+      <button class="iconbtn" type="button" data-back="1" aria-label="뒤로">‹</button>
+      <span class="subtitle">월간메모</span>
+    </div>
+    <div class="monthbar">
+      <button class="iconbtn" id="memoPrev" type="button">‹</button>
+      <span class="t" id="memoTitle"></span>
+      <button class="iconbtn" id="memoNext" type="button">›</button>
+    </div>
+    <div class="card memopaper" id="memoList"></div>
+    <button class="ghost" id="memoAdd" type="button">＋ 메모 추가</button>
+  </section>
+
+  <!-- 백업 -->
+  <section id="view-backup" class="view">
+    <div class="subhead">
+      <button class="iconbtn" type="button" data-back="1" aria-label="뒤로">‹</button>
+      <span class="subtitle">백업 · 복원</span>
+    </div>
+    <div class="paper">
+      <div class="card">
+        <div class="gt">백업 저장</div>
+        <div class="msg" id="bkInfo"></div>
+        <button class="primary" id="bkExport" type="button">백업 파일 저장하기</button>
+        <div class="msg">누르면 공유 창이 떠요. "파일에 저장"을 고르면 됩니다.</div>
+      </div>
+      <div class="card">
+        <div class="gt">백업 불러오기</div>
+        <div class="msg">백업 파일(.json)을 골라 기록을 되살려요. 같은 날짜가 이미 있으면 불러온 기록으로 바뀌고, 나머지 날짜는 그대로 남아요.</div>
+        <button class="secondary" id="bkImportBtn" type="button" style="width:100%">백업 파일 선택</button>
+        <input type="file" id="bkFile" accept=".json,application/json,text/plain" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- 진료 -->
+  <section id="view-clinic" class="view">
+    <div class="subhead">
+      <button class="iconbtn" type="button" data-back="1" aria-label="뒤로">‹</button>
+      <span class="subtitle">진료</span>
+    </div>
+    <div class="paper">
+      <div class="ctitle">최정윤님의 기록</div>
+      <div class="dates cdates">
+        <label>시작일<input type="date" id="cStart"></label>
+        <label>종료일<input type="date" id="cEnd"></label>
+      </div>
+      <div class="stats" id="cStats"></div>
+      <div class="cgrid">
+        <div class="cbox"><div class="gt">기분</div><div id="cMood"></div></div>
+        <div class="cbox"><div class="gt">불안</div><div id="cAnx"></div></div>
+        <div class="cbox"><div class="gt">분노</div><div id="cIrr"></div></div>
+        <div class="cbox"><div class="gt">수면</div><div id="cSleep"></div></div>
+      </div>
+      <div class="cbox" id="cCounts"></div>
+      <div class="cbox" id="cEvents"></div>
+    </div>
+  </section>
+</div>
+
+<!-- 메뉴 -->
+<div id="menu" aria-hidden="true">
+  <div class="scrim" id="menuScrim"></div>
+  <div class="panel">
+    <button class="close" id="menuClose" type="button" aria-label="닫기">×</button>
+    <button class="menuitem" type="button" data-go="cal">달력보기</button>
+    <button class="menuitem" type="button" data-go="graph">그래프로보기</button>
+    <button class="menuitem" type="button" data-go="clinic">진료</button>
+    <button class="menuitem" type="button" data-go="memo">월간메모</button>
+    <button class="menuitem" type="button" data-go="backup">백업 · 복원</button>
+  </div>
+</div>
+
+<!-- 생활사건 모달 -->
+<div class="modal" id="eventModal">
+  <div class="sheet">
+    <h3>생활사건</h3>
+    <textarea id="eventText" placeholder="오늘 있었던 중요한 일이나 상황"></textarea>
+    <div class="btnrow">
+      <button class="secondary" id="eventClear" type="button">지우기</button>
+      <button class="primary" id="eventDone" type="button">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 날짜 상세 모달 -->
+<div class="modal" id="detailModal">
+  <div class="sheet">
+    <h3 id="detailTitle"></h3>
+    <div id="detailBody"></div>
+    <div class="btnrow">
+      <button class="secondary" id="detailClose" type="button">닫기</button>
+      <button class="primary" id="detailEdit" type="button">이 날짜 수정</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 오류 표시 (화면이 비는 것 방지용 안내) ---------- */
+  window.onerror = function (msg, src, line) {
+    try {
+      var b = document.getElementById('errbar');
+      b.style.display = 'block';
+      b.textContent = '오류: ' + msg + ' (줄 ' + line + ')';
+    } catch (e) {}
+  };
+
+  /* ---------- 저장소 ---------- */
+  var KEY = 'mindlog_records_v1';
+  var memStore = {};
+  function loadAll() {
+    try {
+      var s = window.localStorage.getItem(KEY);
+      if (s) { memStore = JSON.parse(s) || {}; }
+    } catch (e) {}
+    return memStore;
+  }
+  function saveAll(obj) {
+    memStore = obj;
+    try { window.localStorage.setItem(KEY, JSON.stringify(obj)); return true; }
+    catch (e) { return false; }
+  }
+
+  /* ---------- 날짜 도우미 (기기 현지 시간 기준) ---------- */
+  var DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function ds(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function pd(s) { var p = s.split('-'); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+  function addDays(s, n) { var d = pd(s); d.setDate(d.getDate() + n); return ds(d); }
+  function todayStr() { return ds(new Date()); }
+  function fmtKo(s) {
+    var d = pd(s);
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + DOW[d.getDay()] + ')';
+  }
+  function sg(n) { return n > 0 ? '+' + n : '' + n; }
+  function esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- 항목 정의 (배열 사용: 음수 key 문제 방지) ---------- */
+  var SUB = [
+    { k: 'anx', t: '두려움 · 소심함 · 걱정 · 불안' },
+    { k: 'irr', t: '짜증 · 분노' },
+    { k: 'int', t: '관심 · 흥미 · 즐거움' },
+    { k: 'act', t: '활동량' },
+    { k: 'spd', t: '생각의 속도와 양' },
+    { k: 'cnt', t: '생각의 내용' }
+  ];
+  var CHECKS = [
+    { k: 'cry', t: '울음' },
+    { k: 'binge', t: '폭식' },
+    { k: 'period', t: '생리' },
+    { k: 'exercise', t: '운동' },
+    { k: 'impulse', t: '충동소비' }
+  ];
+  var MEDS = [
+    { k: 'mAM', t: '아침약' },
+    { k: 'mPM', t: '저녁약' },
+    { k: 'mPRN', t: '필요시약' }
+  ];
+
+  function blank() {
+    return {
+      mood: 0, anx: 0, irr: 0, int: 0, act: 0, spd: 0, cnt: 0,
+      sleep: '', sleepFrom: '', sleepTo: '', cry: false, binge: false, period: false, exercise: false, impulse: false,
+      mAM: '', mPM: '', mPRN: '', events: ''
+    };
+  }
+
+  var VERSION = 'ver.가디';
+
+  function toMin(t) {
+    if (!t || String(t).indexOf(':') < 0) { return null; }
+    var p = String(t).split(':');
+    var h = Number(p[0]), m = Number(p[1]);
+    if (isNaN(h) || isNaN(m)) { return null; }
+    return h * 60 + m;
+  }
+  function sleepHours(from, to) {
+    var a = toMin(from), b = toMin(to);
+    if (a === null || b === null || a === b) { return ''; }
+    var d = (b - a + 1440) % 1440;
+    return Math.round(d / 60 * 10) / 10;
+  }
+  function fmtMin(m) {
+    m = ((Math.round(m) % 1440) + 1440) % 1440;
+    return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+  }
+  function updateSleepTotal() {
+    var el = $('sleepTotal');
+    el.textContent = (cur.sleep === '' || cur.sleep === undefined || cur.sleep === null) ? '' : '총 ' + cur.sleep + '시간';
+  }
+  function recalcSleep() {
+    cur.sleepFrom = $('sleepFrom').value;
+    cur.sleepTo = $('sleepTo').value;
+    cur.sleep = sleepHours(cur.sleepFrom, cur.sleepTo);
+    updateSleepTotal();
+  }
+  var curDate = todayStr();
+  var cur = blank();
+  var detailDate = null;
+
+  function loadDate(s) {
+    curDate = s;
+    var rec = loadAll()[s];
+    cur = blank();
+    if (rec) {
+      for (var key in rec) {
+        if (Object.prototype.hasOwnProperty.call(rec, key)) { cur[key] = rec[key]; }
+      }
+    }
+    fillForm();
+  }
+
+  /* ---------- 화면 만들기 ---------- */
+  var sliderRefs = {};
+
+  function setSliderDisplay(key) {
+    var v = Number(cur[key]) || 0;
+    if (key === 'mood') { $('moodVal').textContent = sg(v); }
+    else if (sliderRefs[key]) { sliderRefs[key].val.textContent = sg(v); }
+  }
+
+  function buildForm() {
+    // 기분 눈금
+    var tk = $('moodTicks');
+    tk.innerHTML = '';
+    for (var i = -4; i <= 4; i++) {
+      var sp = document.createElement('span');
+      sp.textContent = sg(i);
+      tk.appendChild(sp);
+    }
+    $('moodSlider').addEventListener('input', function () {
+      cur.mood = Number(this.value);
+      setSliderDisplay('mood');
+    });
+
+    // 6개 항목
+    var grid = $('subGrid');
+    grid.innerHTML = '';
+    SUB.forEach(function (it) {
+      var box = document.createElement('div');
+      box.className = 'sub';
+      var lab = document.createElement('div');
+      lab.className = 'lab';
+      lab.textContent = it.t;
+      var inp = document.createElement('input');
+      inp.type = 'range'; inp.min = '-4'; inp.max = '4'; inp.step = '1'; inp.value = '0';
+      inp.setAttribute('aria-label', it.t);
+      var val = document.createElement('div');
+      val.className = 'val';
+      val.textContent = '0';
+      inp.addEventListener('input', function () {
+        cur[it.k] = Number(inp.value);
+        setSliderDisplay(it.k);
+      });
+      box.appendChild(lab);
+      box.appendChild(inp);
+      box.appendChild(val);
+      grid.appendChild(box);
+      sliderRefs[it.k] = { input: inp, val: val };
+    });
+
+    // 수면
+    $('sleepFrom').addEventListener('input', recalcSleep);
+    $('sleepFrom').addEventListener('change', recalcSleep);
+    $('sleepTo').addEventListener('input', recalcSleep);
+    $('sleepTo').addEventListener('change', recalcSleep);
+
+    // 체크 항목
+    var ch = $('checks');
+    ch.innerHTML = '';
+    CHECKS.forEach(function (it) {
+      var lb = document.createElement('label');
+      lb.className = 'chk';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = 'chk_' + it.k;
+      cb.addEventListener('change', function () { cur[it.k] = cb.checked; });
+      var sp = document.createElement('span');
+      sp.textContent = it.t;
+      lb.appendChild(cb);
+      lb.appendChild(sp);
+      ch.appendChild(lb);
+    });
+
+    // 약
+    var md = $('meds');
+    md.innerHTML = '';
+    MEDS.forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 'med';
+      var lab = document.createElement('span');
+      lab.className = 'lab';
+      lab.textContent = it.t;
+      var ctl = document.createElement('span');
+      ctl.className = 'ctl';
+      var tm = document.createElement('input');
+      tm.type = 'time';
+      tm.id = 'med_' + it.k;
+      tm.addEventListener('input', function () { cur[it.k] = tm.value; });
+      tm.addEventListener('change', function () { cur[it.k] = tm.value; });
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'xbtn'; x.textContent = '×';
+      x.setAttribute('aria-label', it.t + ' 지우기');
+      x.addEventListener('click', function () { tm.value = ''; cur[it.k] = ''; });
+      ctl.appendChild(tm);
+      ctl.appendChild(x);
+      row.appendChild(lab);
+      row.appendChild(ctl);
+      md.appendChild(row);
+    });
+  }
+
+  function fillForm() {
+    $('dateText').textContent = fmtKo(curDate);
+    $('dateInput').value = curDate;
+    $('dateSub').textContent = loadAll()[curDate] ? '저장된 기록이 있어요' : '';
+    $('moodSlider').value = String(Number(cur.mood) || 0);
+    setSliderDisplay('mood');
+    SUB.forEach(function (it) {
+      sliderRefs[it.k].input.value = String(Number(cur[it.k]) || 0);
+      setSliderDisplay(it.k);
+    });
+    $('sleepFrom').value = cur.sleepFrom || '';
+    $('sleepTo').value = cur.sleepTo || '';
+    updateSleepTotal();
+    CHECKS.forEach(function (it) { $('chk_' + it.k).checked = !!cur[it.k]; });
+    MEDS.forEach(function (it) { $('med_' + it.k).value = cur[it.k] || ''; });
+    updateEventBtn();
+  }
+
+  function updateEventBtn() {
+    $('eventBtn').textContent = cur.events ? '✎ 생활사건 (작성됨)' : '＋ 생활사건';
+  }
+
+  /* ---------- 토스트 ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.className = 'show';
+    if (toastTimer) { clearTimeout(toastTimer); }
+    toastTimer = setTimeout(function () { t.className = ''; }, 1800);
+  }
+
+  /* ---------- 저장 ---------- */
+  function save() {
+    var rec = blank();
+    for (var key in cur) {
+      if (Object.prototype.hasOwnProperty.call(cur, key)) { rec[key] = cur[key]; }
+    }
+    var n = parseFloat(String(rec.sleep).replace(',', '.'));
+    rec.sleep = isNaN(n) ? '' : n;
+    rec.savedAt = new Date().toISOString();
+    var all = loadAll();
+    all[curDate] = rec;
+    var ok = saveAll(all);
+    if (ok) {
+      $('dateSub').textContent = '저장된 기록이 있어요';
+      toast('저장되었습니다');
+    } else {
+      toast('저장 실패: 사파리 설정(비공개 모드)을 확인하세요');
+    }
+  }
+
+  /* ---------- 화면 전환 / 메뉴 ---------- */
+  function showView(name) {
+    ['home', 'cal', 'graph', 'clinic', 'memo', 'backup'].forEach(function (v) {
+      $('view-' + v).className = 'view' + (v === name ? ' active' : '');
+    });
+    $('app').className = (name === 'clinic') ? 'wide' : '';
+    window.scrollTo(0, 0);
+    if (name === 'cal') { renderCal(); }
+    if (name === 'graph') { renderGraph(); }
+    if (name === 'clinic') { renderClinic(); }
+    if (name === 'memo') { renderMemo(); }
+    if (name === 'backup') { renderBackup(); }
+  }
+  function openMenu() { $('menu').className = 'open'; $('menu').setAttribute('aria-hidden', 'false'); }
+  function closeMenu() { $('menu').className = ''; $('menu').setAttribute('aria-hidden', 'true'); }
+
+  /* ---------- 색상 ---------- */
+  function mix(c1, c2, t) {
+    return 'rgb(' + Math.round(c1[0] + (c2[0] - c1[0]) * t) + ',' +
+      Math.round(c1[1] + (c2[1] - c1[1]) * t) + ',' +
+      Math.round(c1[2] + (c2[2] - c1[2]) * t) + ')';
+  }
+  var WHITE = [255, 255, 255];
+  var RED = [222, 72, 66];
+  var BLUE = [64, 116, 196];
+  function moodColor(m) {
+    m = Number(m) || 0;
+    if (m === 0) { return '#FFFFFF'; }
+    if (m > 0) { return mix(WHITE, RED, 0.12 + 0.88 * (m / 4) * 0.85); }
+    return mix(WHITE, BLUE, 0.12 + 0.88 * (Math.abs(m) / 4) * 0.85);
+  }
+
+  /* ---------- 달력 ---------- */
+  var today = new Date();
+  var calY = today.getFullYear();
+  var calM = today.getMonth();
+
+  function renderCal() {
+    $('calTitle').textContent = calY + '년 ' + (calM + 1) + '월';
+    var grid = $('calGrid');
+    grid.innerHTML = '';
+    DOW.forEach(function (d) {
+      var h = document.createElement('div');
+      h.className = 'dow';
+      h.textContent = d;
+      grid.appendChild(h);
+    });
+    var first = new Date(calY, calM, 1).getDay();
+    var days = new Date(calY, calM + 1, 0).getDate();
+    var all = loadAll();
+    var tstr = todayStr();
+    var i;
+    for (i = 0; i < first; i++) {
+      var e = document.createElement('div');
+      e.className = 'cell empty';
+      grid.appendChild(e);
+    }
+    for (i = 1; i <= days; i++) {
+      (function (day) {
+        var s = calY + '-' + pad(calM + 1) + '-' + pad(day);
+        var c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'cell' + (s === tstr ? ' today' : '');
+        var rec = all[s];
+        if (rec && rec.events && String(rec.events).replace(/\s/g, '') !== '') {
+          var dot = document.createElement('span');
+          dot.className = 'dot';
+          c.appendChild(dot);
+        }
+        var num = document.createElement('span');
+        num.textContent = String(day);
+        c.appendChild(num);
+        c.style.background = rec ? moodColor(rec.mood) : '#FFFFFF';
+        c.addEventListener('click', function () { openDetail(s); });
+        grid.appendChild(c);
+      })(i);
+    }
+    var lg = $('legend');
+    lg.innerHTML = '';
+    for (var m = -4; m <= 4; m++) {
+      var sp = document.createElement('span');
+      sp.style.background = moodColor(m);
+      lg.appendChild(sp);
+    }
+  }
+
+  function openDetail(s) {
+    detailDate = s;
+    var rec = loadAll()[s];
+    $('detailTitle').textContent = fmtKo(s);
+    var b = $('detailBody');
+    if (!rec) {
+      b.innerHTML = '<div class="msg">이 날짜에는 저장된 기록이 없어요.</div>';
+    } else {
+      var h = '';
+      h += '<div class="drow"><b>기분</b><span>' + sg(Number(rec.mood) || 0) + '</span></div>';
+      SUB.forEach(function (it) {
+        h += '<div class="drow"><b>' + esc(it.t) + '</b><span>' + sg(Number(rec[it.k]) || 0) + '</span></div>';
+      });
+      var sTxt = '-';
+      if (rec.sleep !== '' && rec.sleep !== undefined && rec.sleep !== null) {
+        sTxt = esc(rec.sleep) + ' 시간';
+        if (rec.sleepFrom && rec.sleepTo) { sTxt = esc(rec.sleepFrom) + ' ~ ' + esc(rec.sleepTo) + ' (' + esc(rec.sleep) + '시간)'; }
+      }
+      h += '<div class="drow"><b>수면시간</b><span>' + sTxt + '</span></div>';
+      var cs = [];
+      CHECKS.forEach(function (it) { if (rec[it.k]) { cs.push(it.t); } });
+      h += '<div class="drow"><b>체크</b><span>' + (cs.length ? esc(cs.join(', ')) : '-') + '</span></div>';
+      MEDS.forEach(function (it) {
+        h += '<div class="drow"><b>' + it.t + '</b><span>' + (rec[it.k] ? esc(rec[it.k]) : '-') + '</span></div>';
+      });
+      if (rec.events) {
+        h += '<div class="drow ev"><b>생활사건</b><br>' + esc(rec.events) + '</div>';
+      }
+      b.innerHTML = h;
+    }
+    $('detailEdit').textContent = rec ? '이 날짜 수정' : '이 날짜 기록하기';
+    $('detailModal').className = 'modal open';
+  }
+
+  /* ---------- 그래프 ---------- */
+  function rangeDates(a, b) {
+    var out = [];
+    var s = a;
+    var guard = 0;
+    while (s <= b && guard < 366) { out.push(s); s = addDays(s, 1); guard++; }
+    return out;
+  }
+
+  function axisLabels(dates, X, H, pb) {
+    var n = dates.length;
+    var idx = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
+    var h = '';
+    var last = -1;
+    idx.forEach(function (i) {
+      if (i === last) { return; }
+      last = i;
+      var d = pd(dates[i]);
+      h += '<text x="' + X(i) + '" y="' + (H - pb + 16) + '" font-size="10" fill="#8A8FA0" text-anchor="middle">' +
+        (d.getMonth() + 1) + '/' + d.getDate() + '</text>';
+    });
+    return h;
+  }
+
+  var SLEEP_OPT = { min: 2, max: 20, step: 2, plain: true, zeroLine: false };
+
+  function lineChart(dates, vals, color, opt) {
+    opt = opt || {};
+    var W = 340, H = 170, pl = 26, pr = 10, pt = 10, pb = 24;
+    var iw = W - pl - pr, ih = H - pt - pb, n = vals.length;
+    var MIN = (opt.min !== undefined) ? opt.min : -4;
+    var MAX = (opt.max !== undefined) ? opt.max : 4;
+    var STEP = opt.step || 2;
+    var ZERO = (opt.zeroLine !== false);
+    function X(i) { return n < 2 ? pl + iw / 2 : pl + i * iw / (n - 1); }
+    function Y(v) { v = Math.max(MIN, Math.min(MAX, v)); return pt + (MAX - v) * ih / (MAX - MIN); }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img">';
+    for (var v = MIN; v <= MAX; v += STEP) {
+      s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="' + (v === 0 && ZERO ? '#BDB29A' : '#E5DCC8') + '" stroke-width="1"/>';
+      s += '<text x="' + (pl - 6) + '" y="' + (Y(v) + 3) + '" font-size="10" fill="#8A8FA0" text-anchor="end">' + (opt.plain ? v : sg(v)) + '</text>';
+    }
+    var d = '';
+    var pen = false;
+    var dots = '';
+    for (var i = 0; i < n; i++) {
+      if (vals[i] === null) { pen = false; continue; }
+      d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(vals[i]).toFixed(1) + ' ';
+      pen = true;
+      dots += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(vals[i]).toFixed(1) + '" r="3.2" fill="' + color + '"/>';
+    }
+    if (d) { s += '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'; }
+    s += dots;
+    s += axisLabels(dates, X, H, pb);
+    s += '</svg>';
+    return s;
+  }
+
+  function barChart(dates, vals, color) {
+    var W = 340, H = 170, pl = 26, pr = 10, pt = 10, pb = 24;
+    var iw = W - pl - pr, ih = H - pt - pb, n = vals.length;
+    var mx = 10;
+    vals.forEach(function (v) { if (v !== null && v > mx) { mx = v; } });
+    mx = Math.ceil(mx / 2) * 2;
+    function X(i) { return pl + (i + 0.5) * iw / n; }
+    function Y(v) { return pt + (mx - v) * ih / mx; }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img">';
+    var step = mx > 12 ? 6 : 2;
+    for (var v = 0; v <= mx; v += step) {
+      s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#E5DCC8" stroke-width="1"/>';
+      s += '<text x="' + (pl - 6) + '" y="' + (Y(v) + 3) + '" font-size="10" fill="#8A8FA0" text-anchor="end">' + v + '</text>';
+    }
+    var bw = Math.max(2, Math.min(22, iw / n * 0.7));
+    for (var i = 0; i < n; i++) {
+      if (vals[i] === null) { continue; }
+      var y = Y(vals[i]);
+      s += '<rect x="' + (X(i) - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, (pt + ih - y)).toFixed(1) + '" rx="2" fill="' + color + '"/>';
+    }
+    s += axisLabels(dates, X, H, pb);
+    s += '</svg>';
+    return s;
+  }
+
+  function renderGraph() {
+    var a = $('gStart').value;
+    var b = $('gEnd').value;
+    if (!a || !b) { return; }
+    if (a > b) { var t = a; a = b; b = t; $('gStart').value = a; $('gEnd').value = b; }
+    var dates = rangeDates(a, b);
+    var all = loadAll();
+    var mood = [], anx = [], slp = [];
+    var cnt = { mAM: 0, mPM: 0, mPRN: 0 };
+    var any = false;
+    dates.forEach(function (s) {
+      var r = all[s];
+      if (r) {
+        any = true;
+        mood.push(Number(r.mood) || 0);
+        anx.push(Number(r.anx) || 0);
+        slp.push(r.sleep === '' || r.sleep === undefined || r.sleep === null ? null : Number(r.sleep));
+        MEDS.forEach(function (it) { if (r[it.k]) { cnt[it.k]++; } });
+      } else {
+        mood.push(null); anx.push(null); slp.push(null);
+      }
+    });
+    if (!any) {
+      var empty = '<div class="msg">선택한 기간에 저장된 기록이 없어요.</div>';
+      $('gMood').innerHTML = empty;
+      $('gAnx').innerHTML = empty;
+      $('gSleep').innerHTML = empty;
+    } else {
+      $('gMood').innerHTML = lineChart(dates, mood, '#3A4560');
+      $('gAnx').innerHTML = lineChart(dates, anx, '#C0604F');
+      $('gSleep').innerHTML = lineChart(dates, slp, '#5B7DB1', SLEEP_OPT);
+    }
+    var total = dates.length;
+    var mh = '<div class="gt">약 기록</div>';
+    MEDS.forEach(function (it) {
+      var label = it.k === 'mPRN' ? '필요시' : it.t;
+      mh += '<div class="medcount"><span>' + label + '</span><b>' + cnt[it.k] + '회 / ' + total + '일</b></div>';
+    });
+    $('gMeds').innerHTML = mh;
+  }
+
+  /* ---------- 진료 화면 ---------- */
+  function sgf(x) {
+    var v = Math.round(x * 10) / 10;
+    return (v > 0 ? '+' : '') + v.toFixed(1);
+  }
+
+  function renderClinic() {
+    var a = $('cStart').value;
+    var b = $('cEnd').value;
+    if (!a || !b) { return; }
+    if (a > b) { var t = a; a = b; b = t; $('cStart').value = a; $('cEnd').value = b; }
+    var dates = rangeDates(a, b);
+    var all = loadAll();
+    var mood = [], irr = [], anx = [], slp = [];
+    var sumM = 0, nM = 0, sumS = 0, nS = 0, recN = 0, sumO = 0, nO = 0;
+    var cnt = { mAM: 0, mPM: 0, mPRN: 0, cry: 0, binge: 0, period: 0, exercise: 0, impulse: 0 };
+    var evs = [];
+    dates.forEach(function (s) {
+      var r = all[s];
+      if (r) {
+        recN++;
+        var m = Number(r.mood) || 0;
+        mood.push(m);
+        irr.push(Number(r.irr) || 0);
+        anx.push(Number(r.anx) || 0);
+        sumM += m; nM++;
+        var sv = (r.sleep === '' || r.sleep === undefined || r.sleep === null) ? null : Number(r.sleep);
+        if (sv !== null && isNaN(sv)) { sv = null; }
+        slp.push(sv);
+        if (sv !== null) { sumS += sv; nS++; }
+        var om = toMin(r.sleepFrom);
+        if (om !== null) { if (om < 720) { om += 1440; } sumO += om; nO++; }
+        MEDS.forEach(function (it) { if (r[it.k]) { cnt[it.k]++; } });
+        CHECKS.forEach(function (it) { if (r[it.k]) { cnt[it.k]++; } });
+        if (r.events) { evs.push({ d: s, t: r.events }); }
+      } else {
+        mood.push(null); irr.push(null); anx.push(null); slp.push(null);
+      }
+    });
+    var total = dates.length;
+
+    $('cStats').innerHTML =
+      '<div class="stat"><b>' + (nM ? sgf(sumM / nM) : '-') + '</b><span>평균 기분</span></div>' +
+      '<div class="stat"><b>' + (nS ? (Math.round(sumS / nS * 10) / 10).toFixed(1) + '시간' : '-') + '</b><span>평균 수면</span></div>' +
+      '<div class="stat"><b>' + (nO ? fmtMin(sumO / nO) : '-') + '</b><span>평균 입면시간</span></div>' +
+      '<div class="stat"><b>' + recN + ' / ' + total + '일</b><span>기록한 날</span></div>';
+
+    if (!recN) {
+      var empty = '<div class="msg">선택한 기간에 저장된 기록이 없어요.</div>';
+      $('cMood').innerHTML = empty;
+      $('cIrr').innerHTML = empty;
+      $('cSleep').innerHTML = empty;
+      $('cAnx').innerHTML = empty;
+    } else {
+      $('cMood').innerHTML = lineChart(dates, mood, '#3A4560');
+      $('cIrr').innerHTML = lineChart(dates, irr, '#D18A3C');
+      $('cSleep').innerHTML = lineChart(dates, slp, '#5B7DB1', SLEEP_OPT);
+      $('cAnx').innerHTML = lineChart(dates, anx, '#C0604F');
+    }
+
+    var h = '<div class="gt">약 · 행동 기록</div><div class="cntgrid">';
+    MEDS.forEach(function (it) {
+      var label = it.k === 'mPRN' ? '필요시약' : it.t;
+      h += '<div class="medcount"><span>' + label + '</span><b>' + cnt[it.k] + '회 / ' + total + '일</b></div>';
+    });
+    CHECKS.forEach(function (it) {
+      h += '<div class="medcount"><span>' + it.t + '</span><b>' + cnt[it.k] + '일</b></div>';
+    });
+    h += '</div>';
+    $('cCounts').innerHTML = h;
+
+    var eh = '<div class="gt">생활사건</div>';
+    if (!evs.length) {
+      eh += '<div class="msg">기록된 생활사건이 없어요.</div>';
+    } else {
+      evs.forEach(function (e) {
+        eh += '<div class="ev"><b>' + e.d.slice(5, 7) + e.d.slice(8, 10) + '</b>' + esc(e.t) + '</div>';
+      });
+    }
+    $('cEvents').innerHTML = eh;
+  }
+
+  /* ---------- 월간메모 ---------- */
+  var MEMO_KEY = 'mindlog_memos_v1';
+  var memos = {};
+  var MONTH_RE = /^\d{4}-\d{2}$/;
+  function loadMemos() {
+    try {
+      var t = window.localStorage.getItem(MEMO_KEY);
+      if (t) { memos = JSON.parse(t) || {}; }
+    } catch (e) {}
+    return memos;
+  }
+  function saveMemos() {
+    try { window.localStorage.setItem(MEMO_KEY, JSON.stringify(memos)); return true; }
+    catch (e) { return false; }
+  }
+  var memoY = new Date().getFullYear();
+  var memoM = new Date().getMonth();
+  function memoKey() { return memoY + '-' + pad(memoM + 1); }
+  function newId() { return 'm' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
+  function autosize(ta) {
+    ta.style.height = 'auto';
+    if (ta.scrollHeight) { ta.style.height = ta.scrollHeight + 'px'; }
+  }
+
+  function renderMemo() {
+    $('memoTitle').textContent = memoY + '년 ' + (memoM + 1) + '월';
+    var box = $('memoList');
+    box.innerHTML = '';
+    var list = memos[memoKey()] || [];
+    if (!list.length) {
+      var em = document.createElement('div');
+      em.className = 'msg';
+      em.textContent = '이번 달 메모가 없어요. 진료 때 말하고 싶은 것을 적어두세요.';
+      box.appendChild(em);
+      return;
+    }
+    list.forEach(function (e) {
+      var row = document.createElement('div');
+      row.className = 'memorow';
+      var l = document.createElement('span');
+      l.className = 'par'; l.textContent = '(';
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'memod'; inp.value = e.d || '';
+      inp.maxLength = 4;
+      inp.setAttribute('inputmode', 'numeric');
+      inp.setAttribute('aria-label', '날짜');
+      var r = document.createElement('span');
+      r.className = 'par'; r.textContent = ')';
+      var ta = document.createElement('textarea');
+      ta.className = 'memot'; ta.rows = 1; ta.value = e.t || '';
+      ta.setAttribute('placeholder', '메모');
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'xbtn'; del.textContent = '×';
+      del.setAttribute('aria-label', '메모 지우기');
+      inp.addEventListener('input', function () {
+        var v = inp.value.replace(/\D/g, '').slice(0, 4);
+        if (v !== inp.value) { inp.value = v; }
+        e.d = v;
+        saveMemos();
+      });
+      ta.addEventListener('input', function () {
+        e.t = ta.value;
+        autosize(ta);
+        saveMemos();
+      });
+      del.addEventListener('click', function () {
+        if (e.t && !window.confirm('이 메모를 지울까요?')) { return; }
+        var arr = memos[memoKey()] || [];
+        var i = arr.indexOf(e);
+        if (i >= 0) { arr.splice(i, 1); }
+        saveMemos();
+        renderMemo();
+      });
+      row.appendChild(l); row.appendChild(inp); row.appendChild(r);
+      row.appendChild(ta); row.appendChild(del);
+      box.appendChild(row);
+      autosize(ta);
+    });
+  }
+
+  function addMemo() {
+    var now = new Date();
+    var md = (now.getFullYear() === memoY && now.getMonth() === memoM)
+      ? pad(now.getMonth() + 1) + pad(now.getDate())
+      : pad(memoM + 1) + '01';
+    var k = memoKey();
+    if (!memos[k]) { memos[k] = []; }
+    memos[k].push({ id: newId(), d: md, t: '' });
+    if (!saveMemos()) { toast('저장 실패: 사파리 설정(비공개 모드)을 확인하세요'); }
+    renderMemo();
+    var tas = $('memoList').children;
+    if (tas.length) {
+      var lastRow = tas[tas.length - 1];
+      var ta = lastRow.children && lastRow.children[3];
+      if (ta && ta.focus) { try { ta.focus(); } catch (e) {} }
+    }
+  }
+
+  /* ---------- 백업 / 복원 ---------- */
+  var LB_KEY = 'mindlog_last_backup';
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+  function countKeys(o) { var n = 0; for (var k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { n++; } } return n; }
+
+  function renderBackup() {
+    var n = countKeys(loadAll());
+    var last = '';
+    try { last = window.localStorage.getItem(LB_KEY) || ''; } catch (e) {}
+    var txt = '저장된 기록 ' + n + '일치<br>';
+    if (last) {
+      var d = new Date(last);
+      txt += '마지막 백업: ' + ds(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    } else {
+      txt += '아직 백업한 적이 없어요';
+    }
+    $('bkInfo').innerHTML = txt;
+  }
+
+  function downloadText(text, name) {
+    var blob = new Blob([text], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function markBackedUp() {
+    try { window.localStorage.setItem(LB_KEY, new Date().toISOString()); } catch (e) {}
+    renderBackup();
+    toast('백업 파일을 만들었어요');
+  }
+
+  function exportBackup() {
+    var payload = { app: 'Mindlog', format: 1, exportedAt: new Date().toISOString(), records: loadAll(), memos: memos };
+    var text = JSON.stringify(payload, null, 1);
+    var name = 'Mindlog-backup-' + todayStr() + '.json';
+    try {
+      var file = new File([text], name, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Mindlog 백업' }).then(markBackedUp).catch(function (err) {
+          if (err && err.name === 'AbortError') { return; }
+          try { downloadText(text, name); markBackedUp(); } catch (e2) { toast('백업 파일을 만들지 못했어요'); }
+        });
+        return;
+      }
+    } catch (e) {}
+    try { downloadText(text, name); markBackedUp(); } catch (e3) { toast('백업 파일을 만들지 못했어요'); }
+  }
+
+  function importBackup(text) {
+    var obj;
+    try { obj = JSON.parse(text); } catch (e) { toast('백업 파일이 아니에요'); return; }
+    var src = (obj && typeof obj === 'object' && obj.records && typeof obj.records === 'object') ? obj.records : obj;
+    var incoming = {};
+    var n = 0;
+    if (src && typeof src === 'object') {
+      for (var k in src) {
+        if (Object.prototype.hasOwnProperty.call(src, k) && DATE_RE.test(k) && src[k] && typeof src[k] === 'object') {
+          incoming[k] = src[k];
+          n++;
+        }
+      }
+    }
+    var inMemos = {};
+    var m = 0;
+    if (obj && typeof obj === 'object' && obj.memos && typeof obj.memos === 'object') {
+      for (var mk2 in obj.memos) {
+        if (Object.prototype.hasOwnProperty.call(obj.memos, mk2) && MONTH_RE.test(mk2) && Array.isArray(obj.memos[mk2])) {
+          var good = [];
+          obj.memos[mk2].forEach(function (x) {
+            if (x && typeof x === 'object' && typeof x.id === 'string') {
+              good.push({ id: x.id, d: String(x.d || '').slice(0, 4), t: String(x.t || '') });
+            }
+          });
+          if (good.length) { inMemos[mk2] = good; m += good.length; }
+        }
+      }
+    }
+    if (!n && !m) { toast('불러올 기록이 없어요'); return; }
+    var cur0 = loadAll();
+    var over = 0;
+    for (var d in incoming) { if (Object.prototype.hasOwnProperty.call(cur0, d)) { over++; } }
+    var msg = (n ? n + '일치 기록' : '') + (n && m ? ', ' : '') + (m ? '메모 ' + m + '개' : '') + '를 불러올까요?';
+    if (over) { msg += '\n(그중 ' + over + '일은 지금 기록이 불러온 기록으로 바뀌어요)'; }
+    if (!window.confirm(msg)) { return; }
+    var merged = {};
+    for (var a in cur0) { if (Object.prototype.hasOwnProperty.call(cur0, a)) { merged[a] = cur0[a]; } }
+    for (var b in incoming) { if (Object.prototype.hasOwnProperty.call(incoming, b)) { merged[b] = incoming[b]; } }
+    for (var mk3 in inMemos) {
+      if (!Object.prototype.hasOwnProperty.call(inMemos, mk3)) { continue; }
+      var have = memos[mk3] || [];
+      inMemos[mk3].forEach(function (x) {
+        var found = -1;
+        for (var q = 0; q < have.length; q++) { if (have[q].id === x.id) { found = q; break; } }
+        if (found >= 0) { have[found] = x; } else { have.push(x); }
+      });
+      memos[mk3] = have;
+    }
+    saveMemos();
+    if (saveAll(merged)) {
+      loadDate(curDate);
+      renderBackup();
+      toast('불러왔어요');
+    } else {
+      toast('불러오기 실패: 저장 공간을 확인하세요');
+    }
+  }
+
+  /* ---------- 이벤트 연결 ---------- */
+  function wire() {
+    $('menuBtn').addEventListener('click', openMenu);
+    $('menuClose').addEventListener('click', closeMenu);
+    $('menuScrim').addEventListener('click', closeMenu);
+    var items = document.querySelectorAll('[data-go]');
+    for (var i = 0; i < items.length; i++) {
+      (function (el) {
+        el.addEventListener('click', function () {
+          closeMenu();
+          showView(el.getAttribute('data-go'));
+        });
+      })(items[i]);
+    }
+    var backs = document.querySelectorAll('[data-back]');
+    for (var j = 0; j < backs.length; j++) {
+      backs[j].addEventListener('click', function () { showView('home'); });
+    }
+
+    $('dateInput').addEventListener('change', function () {
+      if (this.value) { loadDate(this.value); }
+    });
+
+    $('saveBtn').addEventListener('click', save);
+
+    $('memoPrev').addEventListener('click', function () {
+      memoM--; if (memoM < 0) { memoM = 11; memoY--; } renderMemo();
+    });
+    $('memoNext').addEventListener('click', function () {
+      memoM++; if (memoM > 11) { memoM = 0; memoY++; } renderMemo();
+    });
+    $('memoAdd').addEventListener('click', addMemo);
+
+    $('bkExport').addEventListener('click', exportBackup);
+    $('bkImportBtn').addEventListener('click', function () { $('bkFile').click(); });
+    $('bkFile').addEventListener('change', function () {
+      var input = this;
+      var f = input.files && input.files[0];
+      if (!f) { return; }
+      var rd = new FileReader();
+      rd.onload = function () { importBackup(String(rd.result)); input.value = ''; };
+      rd.onerror = function () { toast('파일을 읽지 못했어요'); input.value = ''; };
+      rd.readAsText(f);
+    });
+
+    $('eventBtn').addEventListener('click', function () {
+      $('eventText').value = cur.events || '';
+      $('eventModal').className = 'modal open';
+    });
+    $('eventDone').addEventListener('click', function () {
+      cur.events = $('eventText').value;
+      updateEventBtn();
+      $('eventModal').className = 'modal';
+    });
+    $('eventClear').addEventListener('click', function () { $('eventText').value = ''; });
+    $('eventModal').addEventListener('click', function (e) {
+      if (e.target === this) { cur.events = $('eventText').value; updateEventBtn(); this.className = 'modal'; }
+    });
+
+    $('calPrev').addEventListener('click', function () {
+      calM--; if (calM < 0) { calM = 11; calY--; } renderCal();
+    });
+    $('calNext').addEventListener('click', function () {
+      calM++; if (calM > 11) { calM = 0; calY++; } renderCal();
+    });
+
+    $('detailClose').addEventListener('click', function () { $('detailModal').className = 'modal'; });
+    $('detailModal').addEventListener('click', function (e) {
+      if (e.target === this) { this.className = 'modal'; }
+    });
+    $('detailEdit').addEventListener('click', function () {
+      $('detailModal').className = 'modal';
+      loadDate(detailDate);
+      showView('home');
+    });
+
+    var end = todayStr();
+    $('gEnd').value = end;
+    $('gStart').value = addDays(end, -13);
+    $('gStart').addEventListener('change', renderGraph);
+    $('gEnd').addEventListener('change', renderGraph);
+
+    $('cEnd').value = end;
+    $('cStart').value = addDays(end, -29);
+    $('cStart').addEventListener('change', renderClinic);
+    $('cEnd').addEventListener('change', renderClinic);
+  }
+
+  /* ---------- 시작 ---------- */
+  $('verText').textContent = VERSION;
+  buildForm();
+  wire();
+  loadAll();
+  loadMemos();
+  loadDate(todayStr());
+})();
+</script>
+</body>
+</html>
